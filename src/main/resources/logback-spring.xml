@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--
+        Pulls in Spring Boot's default color codes, log level thresholds,
+        and exception formatting so we don't have to redefine them.
+    -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!--
+                %d              — timestamp (full date + ms precision for log correlation)
+                %-5level        — level left-padded so columns stay aligned (INFO vs WARN vs ERROR)
+                [%X{requestId}] — MDC value set by MdcRequestFilter; empty for background threads (scheduled jobs etc.)
+                %logger{36}     — class name truncated to 36 chars to keep lines readable
+                %msg%n          — the actual log message
+            -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{requestId}] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Suppress noisy Hibernate SQL parameter binding logs unless explicitly enabled -->
+    <logger name="org.hibernate.orm.jdbc.bind" level="WARN"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

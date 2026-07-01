@@ -1,0 +1,1331 @@
+{
+  "info": {
+    "name": "CustomerService",
+    "_postman_id": "cs-collection-v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phone\": \"+49123456789\",\n  \"agreements\": [\n    { \"type\": \"TERMS_OF_SERVICE\", \"version\": 1, \"accepted\": true },\n    { \"type\": \"PRIVACY_POLICY\", \"version\": 1, \"accepted\": true },\n    { \"type\": \"LOYALTY_PROGRAM_TERMS\", \"version\": 1, \"accepted\": true },\n    { \"type\": \"MARKETING_EMAIL\", \"version\": 1, \"accepted\": false }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Response has message\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"message\");",
+                  "    pm.expect(body.message).to.be.a(\"string\").and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resend Activation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"email\": \"{{testEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/resend-activation",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "resend-activation"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response has message\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"message\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Activate Account - Step 1 (Validate Token)",
+          "protocolProfileBehavior": { "followRedirects": false },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/activate?token=<paste-token-from-logs>",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "activate"],
+              "query": [{ "key": "token", "value": "<paste-token-from-logs>" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Step 1 of two-step activation.",
+                  "// Validates the token without consuming it — no side effects.",
+                  "// Copy the token UUID from the app logs (NoOpEmailService prints it).",
+                  "// 200 — token valid; 401 — token invalid or expired.",
+                  "pm.test(\"Token is valid\", () => {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Activate Account - Step 2 (Confirm)",
+          "protocolProfileBehavior": { "followRedirects": false },
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<paste-token-from-logs>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "activate"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Step 2 of two-step activation.",
+                  "// Consumes the token and enables the account.",
+                  "// Returns 302 → ACTIVATION_SUCCESS_URL on success.",
+                  "pm.test(\"Activation successful\", () => {",
+                  "    pm.expect(pm.response.code).to.equal(302);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"email\": \"{{testEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response has tokens\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"accessToken\");",
+                  "    pm.expect(body).to.have.property(\"refreshToken\");",
+                  "    pm.expect(body.accessToken).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(body.refreshToken).to.be.a(\"string\").and.not.empty;",
+                  "    pm.environment.set(\"accessToken\", body.accessToken);",
+                  "    pm.environment.set(\"refreshToken\", body.refreshToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "refresh"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"New tokens received\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"accessToken\");",
+                  "    pm.expect(body).to.have.property(\"refreshToken\");",
+                  "    pm.environment.set(\"accessToken\", body.accessToken);",
+                  "    pm.environment.set(\"refreshToken\", body.refreshToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "logout"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 204\", () => pm.response.to.have.status(204));",
+                  "pm.environment.set(\"refreshToken\", \"\");",
+                  "pm.environment.set(\"accessToken\", \"\");"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Customer",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "me"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response has customer fields\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.all.keys(\"id\", \"email\", \"firstName\", \"lastName\", \"phone\", \"role\", \"enabled\", \"createdAt\");",
+                  "    pm.expect(body.enabled).to.be.true;",
+                  "    pm.environment.set(\"customerId\", body.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Doe\",\n  \"phone\": \"+49987654321\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "me"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Profile updated\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.firstName).to.eql(\"Jane\");",
+                  "    pm.expect(body.lastName).to.eql(\"Doe\");",
+                  "    pm.expect(body.phone).to.eql(\"+49987654321\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"currentPassword\": \"{{testPassword}}\",\n  \"newPassword\": \"NewPass4567!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/me/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "me", "change-password"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 204\", () => pm.response.to.have.status(204));",
+                  "// All sessions invalidated — clear stored tokens",
+                  "pm.environment.set(\"accessToken\", \"\");",
+                  "pm.environment.set(\"refreshToken\", \"\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete My Account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "me"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Bonus",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "Get Balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/bonus",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "bonus"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response has balance\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"balance\");",
+                  "    pm.expect(body.balance).to.be.a(\"number\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Addresses",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "List Addresses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "addresses"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response is array\", () => {",
+                  "    pm.expect(pm.response.json()).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Add Address",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"type\": \"SHIPPING\",\n  \"street\": \"Unter den Linden 1\",\n  \"city\": \"Berlin\",\n  \"postalCode\": \"10117\",\n  \"country\": \"DE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "addresses"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Response has address fields\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"id\");",
+                  "    pm.expect(body.type).to.eql(\"SHIPPING\");",
+                  "    pm.expect(body.country).to.eql(\"DE\");",
+                  "    pm.environment.set(\"addressId\", body.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"type\": \"BILLING\",\n  \"street\": \"Alexanderplatz 1\",\n  \"city\": \"Berlin\",\n  \"postalCode\": \"10178\",\n  \"country\": \"DE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/addresses/{{addressId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "addresses", "{{addressId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Address updated\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.type).to.eql(\"BILLING\");",
+                  "    pm.expect(body.street).to.eql(\"Alexanderplatz 1\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/addresses/{{addressId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "addresses", "{{addressId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Agreements",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "List All Agreements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/me/agreements",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "me", "agreements"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response is array\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an(\"array\");",
+                  "    if (body.length > 0) {",
+                  "        pm.expect(body[0]).to.have.all.keys(\"type\", \"version\", \"accepted\", \"createdAt\");",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Active Agreements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/me/agreements/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "me", "agreements", "active"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"All returned agreements are accepted\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an(\"array\");",
+                  "    body.forEach(a => pm.expect(a.accepted).to.be.true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Agreement",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"type\": \"MARKETING_EMAIL\",\n  \"version\": 1,\n  \"accepted\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/me/agreements",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "me", "agreements"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Returns updated agreements list\", () => {",
+                  "    pm.expect(pm.response.json()).to.be.an(\"array\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "auth": {
+        "type": "bearer",
+        "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }]
+      },
+      "item": [
+        {
+          "name": "Admin Login",
+          "auth": { "type": "noauth" },
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"AdminPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Admin tokens saved\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.property(\"accessToken\");",
+                  "    pm.environment.set(\"adminAccessToken\", body.accessToken);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Set Account Enabled",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"enabled\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/customers/{{targetCustomerId}}/enabled",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "customers", "{{targetCustomerId}}", "enabled"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Account disabled\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.enabled).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/customers/{{targetCustomerId}}/sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "customers", "{{targetCustomerId}}", "sessions"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response is array\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.be.an(\"array\");",
+                  "    if (body.length > 0) {",
+                  "        pm.expect(body[0]).to.have.all.keys(\"id\", \"expiresAt\", \"createdAt\");",
+                  "        pm.environment.set(\"sessionId\", body[0].id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Terminate All Sessions",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/customers/{{targetCustomerId}}/sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "customers", "{{targetCustomerId}}", "sessions"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Terminate Session",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/customers/{{targetCustomerId}}/sessions/{{sessionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "customers", "{{targetCustomerId}}", "sessions", "{{sessionId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/admin/customers/{{targetCustomerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "admin", "customers", "{{targetCustomerId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Service is UP\", () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.status).to.eql(\"UP\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Internal",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "Customers",
+          "item": [
+            {
+              "name": "List Customers",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers?page=0&size=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers"],
+                  "query": [
+                    { "key": "page", "value": "0" },
+                    { "key": "size", "value": "20" }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Response is a page\", () => {",
+                      "    const body = pm.response.json();",
+                      "    pm.expect(body).to.have.property(\"content\");",
+                      "    pm.expect(body.content).to.be.an(\"array\");",
+                      "    pm.expect(body).to.have.property(\"totalElements\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Get Customer",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Response has customer fields\", () => {",
+                      "    const body = pm.response.json();",
+                      "    pm.expect(body).to.have.all.keys(\"id\", \"email\", \"firstName\", \"lastName\", \"phone\", \"role\", \"enabled\", \"createdAt\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Validate Token",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "options": { "raw": { "language": "json" } },
+                  "raw": "{\n  \"token\": \"{{accessToken}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/validate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "validate"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Returns customer for valid token\", () => {",
+                      "    const body = pm.response.json();",
+                      "    pm.expect(body).to.have.property(\"id\");",
+                      "    pm.expect(body).to.have.property(\"email\");",
+                      "    pm.expect(body.enabled).to.be.true;",
+                      "    pm.environment.set(\"targetCustomerId\", body.id);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Customer",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "options": { "raw": { "language": "json" } },
+                  "raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"Name\",\n  \"phone\": \"+49111222333\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Customer updated\", () => {",
+                      "    const body = pm.response.json();",
+                      "    pm.expect(body.firstName).to.eql(\"Updated\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "List Sessions",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}/sessions",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}", "sessions"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Response is array\", () => {",
+                      "    const body = pm.response.json();",
+                      "    pm.expect(body).to.be.an(\"array\");",
+                      "    if (body.length > 0) {",
+                      "        pm.environment.set(\"sessionId\", body[0].id);",
+                      "    }",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Bonus",
+          "item": [
+            {
+              "name": "Get Balance",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}/bonus",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}", "bonus"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Has balance\", () => {",
+                      "    const body = pm.response.json();",
+                      "    pm.expect(body).to.have.property(\"balance\");",
+                      "    pm.expect(body.balance).to.be.a(\"number\").and.at.least(0);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Credit Bonus",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "options": { "raw": { "language": "json" } },
+                  "raw": "{\n  \"amount\": 50,\n  \"idempotencyKey\": \"{{$guid}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}/bonus/credit",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}", "bonus", "credit"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Balance increased\", () => {",
+                      "    const body = pm.response.json();",
+                      "    pm.expect(body).to.have.property(\"balance\");",
+                      "    pm.expect(body.balance).to.be.a(\"number\").and.at.least(50);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Redeem Bonus",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "options": { "raw": { "language": "json" } },
+                  "raw": "{\n  \"amount\": 10,\n  \"idempotencyKey\": \"{{$guid}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}/bonus/redeem",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}", "bonus", "redeem"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Balance decreased\", () => {",
+                      "    const body = pm.response.json();",
+                      "    pm.expect(body).to.have.property(\"balance\");",
+                      "    pm.expect(body.balance).to.be.a(\"number\").and.at.least(0);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Addresses",
+          "item": [
+            {
+              "name": "List Addresses",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}/addresses",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}", "addresses"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Response is array\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Add Address",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "options": { "raw": { "language": "json" } },
+                  "raw": "{\n  \"type\": \"SHIPPING\",\n  \"street\": \"Friedrichstraße 100\",\n  \"city\": \"Berlin\",\n  \"postalCode\": \"10117\",\n  \"country\": \"DE\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}/addresses",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}", "addresses"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Address created\", () => {",
+                      "    const body = pm.response.json();",
+                      "    pm.expect(body).to.have.property(\"id\");",
+                      "    pm.environment.set(\"addressId\", body.id);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Address",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "options": { "raw": { "language": "json" } },
+                  "raw": "{\n  \"type\": \"BILLING\",\n  \"street\": \"Hauptstraße 5\",\n  \"city\": \"Munich\",\n  \"postalCode\": \"80331\",\n  \"country\": \"DE\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}/addresses/{{addressId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}", "addresses", "{{addressId}}"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Address updated\", () => {",
+                      "    const body = pm.response.json();",
+                      "    pm.expect(body.type).to.eql(\"BILLING\");",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Delete Address",
+              "request": {
+                "method": "DELETE",
+                "header": [{ "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}/addresses/{{addressId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}", "addresses", "{{addressId}}"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 204\", () => pm.response.to.have.status(204));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Agreements",
+          "item": [
+            {
+              "name": "List All Agreements",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}/agreements",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}", "agreements"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Response is array\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "List Active Agreements",
+              "request": {
+                "method": "GET",
+                "header": [{ "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}/agreements/active",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}", "agreements", "active"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"All returned agreements are accepted\", () => {",
+                      "    const body = pm.response.json();",
+                      "    pm.expect(body).to.be.an(\"array\");",
+                      "    body.forEach(a => pm.expect(a.accepted).to.be.true);",
+                      "});"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Update Agreement",
+              "request": {
+                "method": "POST",
+                "header": [
+                  { "key": "Content-Type", "value": "application/json" },
+                  { "key": "X-Internal-Api-Key", "value": "{{internalApiKey}}" }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "options": { "raw": { "language": "json" } },
+                  "raw": "{\n  \"type\": \"SMS_NOTIFICATIONS\",\n  \"version\": 1,\n  \"accepted\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/internal/customers/{{targetCustomerId}}/agreements",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "internal", "customers", "{{targetCustomerId}}", "agreements"]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
